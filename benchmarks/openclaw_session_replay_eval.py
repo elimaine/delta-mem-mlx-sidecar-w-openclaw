@@ -14,7 +14,9 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from benchmarks.full_delta_mem_bench import key_term_recall, token_f1
+from benchmarks.full_delta_mem_bench import token_f1
+
+PASS_THRESHOLD = 0.67
 
 
 @dataclass(frozen=True)
@@ -278,7 +280,7 @@ def run_probes(
                 "expected": probe.expected,
                 "output": output,
                 "score": score,
-                "passed": score["score"] >= 0.5,
+                "passed": score["score"] >= PASS_THRESHOLD,
                 "elapsed_ms": elapsed_ms(started),
             }
         )
@@ -287,16 +289,166 @@ def run_probes(
 
 def score_output(output: str, expected: list[str]) -> dict[str, float]:
     if not expected:
-        return {"score": 0.0, "exact_or_substring": 0.0, "key_term_recall": 0.0, "token_f1": 0.0}
-    substring = max(float(normalize(item) in normalize(output)) for item in expected)
-    term_score = max(key_term_recall(output, terms(item)) for item in expected)
-    f1 = max(token_f1(output, item) for item in expected)
+        return {
+            "score": 0.0,
+            "exact_or_substring": 0.0,
+            "required_evidence": 0.0,
+            "key_term_recall": 0.0,
+            "token_f1": 0.0,
+        }
+    item_scores = [score_expected_item(output, item) for item in expected]
+    substring = sum(item["exact_or_substring"] for item in item_scores) / len(item_scores)
+    term_score = sum(item["key_term_recall"] for item in item_scores) / len(item_scores)
+    f1 = sum(item["token_f1"] for item in item_scores) / len(item_scores)
+    required_evidence = sum(item["score"] for item in item_scores) / len(item_scores)
+    if looks_like_unsupported_answer(output) and substring < 1.0:
+        required_evidence = min(required_evidence, 0.25)
     return {
-        "score": round(max(substring, term_score, f1), 4),
+        "score": round(required_evidence, 4),
         "exact_or_substring": round(substring, 4),
+        "required_evidence": round(required_evidence, 4),
         "key_term_recall": round(term_score, 4),
         "token_f1": round(f1, 4),
     }
+
+
+def score_expected_item(output: str, expected: str) -> dict[str, float]:
+    candidates = [expected, *expected_aliases(expected)]
+    return max(
+        (score_expected_candidate(output, candidate) for candidate in candidates),
+        key=lambda item: item["score"],
+    )
+
+
+def score_expected_candidate(output: str, expected: str) -> dict[str, float]:
+    normalized_output = normalize(output)
+    normalized_expected = normalize(expected)
+    exact = float(bool(normalized_expected) and normalized_expected in normalized_output)
+    numbers = numeric_terms(expected)
+    negated = is_negated_expectation(expected)
+    if negated:
+        term_score = negated_expectation_score(output, expected)
+    elif numbers:
+        number_score = sum(float(numeric_value_present(output, number)) for number in numbers) / len(numbers)
+        text_terms = [term for term in terms(expected) if term not in set(numbers)]
+        text_score = fuzzy_term_recall(output, text_terms) if text_terms else 1.0
+        term_score = min(number_score, text_score)
+    else:
+        term_score = fuzzy_term_recall(output, terms(expected))
+    f1 = token_f1(output, expected)
+    score = max(exact, term_score if negated else max(term_score, f1))
+    return {
+        "score": score,
+        "exact_or_substring": exact,
+        "key_term_recall": term_score,
+        "token_f1": f1,
+    }
+
+
+def expected_aliases(expected: str) -> list[str]:
+    normalized_expected = normalize(expected)
+    aliases = {
+        "optional": [
+            "not required",
+            "not mandatory",
+            "not a mandatory component",
+            "can run with or without",
+        ],
+        "runnable without openclaw": [
+            "run without OpenClaw",
+            "operate independently without OpenClaw",
+            "work without OpenClaw",
+            "run with or without OpenClaw",
+        ],
+        "not a default requirement": [
+            "should not be required",
+            "not required",
+            "not mandatory",
+            "not a mandatory component",
+            "not a mandatory dependency",
+            "optional enhancement",
+        ],
+        "not merely mirror": [
+            "rather than mirroring",
+            "instead of mirroring",
+            "not mirroring",
+            "without mirroring",
+        ],
+    }
+    return aliases.get(normalized_expected, [])
+
+
+def numeric_terms(value: str) -> list[str]:
+    return re.findall(r"\d+(?:\.\d+)?x?", value.lower())
+
+
+def numeric_value_present(output: str, number: str) -> bool:
+    output_lower = output.lower()
+    if number in output_lower:
+        return True
+    return normalize(number) in normalize(output_lower)
+
+
+def fuzzy_term_recall(output: str, expected_terms: list[str]) -> float:
+    if not expected_terms:
+        return 0.0
+    output_words = normalize(output).split()
+    matched = sum(float(any(token_matches(word, term) for word in output_words)) for term in expected_terms)
+    return matched / len(expected_terms)
+
+
+def token_matches(output_word: str, expected_term: str) -> bool:
+    if output_word == expected_term:
+        return True
+    if len(expected_term) >= 5 and output_word.startswith(expected_term):
+        return True
+    if len(output_word) >= 5 and expected_term.startswith(output_word):
+        return True
+    return False
+
+
+def is_negated_expectation(value: str) -> bool:
+    return any(token in normalize(value).split() for token in {"not", "no", "without", "non"})
+
+
+def negated_expectation_score(output: str, expected: str) -> float:
+    expected_tokens = terms(expected)
+    content_tokens = [token for token in expected_tokens if token not in {"not", "without", "merely"}]
+    if not content_tokens:
+        return fuzzy_term_recall(output, expected_tokens)
+    normalized_output = normalize(output)
+    words = normalized_output.split()
+    has_content = all(any(token_matches(word, token) for word in words) for token in content_tokens)
+    if not has_content:
+        return 0.0
+    negation_positions = [
+        index
+        for index, word in enumerate(words)
+        if word in {"not", "no", "without", "optional", "rather", "instead", "avoid", "remove"}
+    ]
+    content_positions = [
+        index
+        for index, word in enumerate(words)
+        if any(token_matches(word, token) for token in content_tokens)
+    ]
+    if any(abs(neg - content) <= 6 for neg in negation_positions for content in content_positions):
+        return 1.0
+    return 0.0
+
+
+def looks_like_unsupported_answer(output: str) -> bool:
+    normalized_output = normalize(output)
+    patterns = [
+        "does not contain",
+        "cannot determine",
+        "cannot be determined",
+        "not provided",
+        "no such comparison",
+        "insufficient information",
+        "cannot identify",
+        "not enough information",
+    ]
+    return any(pattern in normalized_output for pattern in patterns)
 
 
 def summarize(probe_records: list[dict[str, Any]], replay_records: list[dict[str, Any]]) -> dict[str, Any]:

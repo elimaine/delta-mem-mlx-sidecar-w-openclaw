@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from benchmarks.openclaw_session_replay_eval import (  # noqa: E402
+    PASS_THRESHOLD,
     chunk_history,
     load_history_events,
     load_probes,
@@ -91,6 +92,68 @@ def test_score_output_uses_overlap_metrics() -> None:
 
     assert score["score"] > 0
     assert score["key_term_recall"] == 1.0
+
+
+def test_score_output_requires_all_expected_items() -> None:
+    score = score_output(
+        "OpenClaw should be optional.",
+        ["optional", "runnable without OpenClaw", "not a default requirement"],
+    )
+
+    assert 0 < score["score"] < PASS_THRESHOLD
+
+
+def test_score_output_caps_unsupported_answers() -> None:
+    score = score_output(
+        "The corrected LoCoMo session-context comparison cannot be determined from the provided history.",
+        ["0.4667", "0.5000", "session-context"],
+    )
+
+    assert score["score"] <= 0.25
+
+
+def test_score_output_requires_numeric_evidence() -> None:
+    score = score_output(
+        "The corrected LoCoMo session-context comparison improved the session-context score.",
+        ["0.4667", "0.5000", "session-context"],
+    )
+
+    assert score["score"] < PASS_THRESHOLD
+
+
+def test_score_output_requires_negated_fact() -> None:
+    good = score_output("Use MLX on Apple Silicon, not CUDA.", ["not CUDA"])
+    bad = score_output("Use CUDA acceleration where available.", ["not CUDA"])
+
+    assert good["score"] == 1.0
+    assert bad["score"] == 0.0
+
+
+def test_score_output_accepts_negated_wording_variants() -> None:
+    score = score_output(
+        "Preserve delta state rather than mirroring the entire history.",
+        ["not merely mirror"],
+    )
+
+    assert score["score"] == 1.0
+
+
+def test_score_output_accepts_optional_openclaw_wording() -> None:
+    score = score_output(
+        "OpenClaw should not be required. The repository can operate independently without OpenClaw.",
+        ["optional", "runnable without OpenClaw", "not a default requirement"],
+    )
+
+    assert score["score"] >= PASS_THRESHOLD
+
+
+def test_score_output_requires_public_adapter_identifier() -> None:
+    score = score_output(
+        "The public MLX adapter is hosted on Hugging Face.",
+        ["ofthetrees/delta-mem-qwen3-4b-instruct-mlx-adapter", "Hugging Face"],
+    )
+
+    assert score["score"] < PASS_THRESHOLD
 
 
 def test_summarize_reports_passes_and_latency_means() -> None:
