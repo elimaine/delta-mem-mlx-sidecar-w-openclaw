@@ -35,6 +35,12 @@ def main() -> int:
     parser.add_argument("--sample-limit", type=int, default=1)
     parser.add_argument("--question-limit", type=int, default=10)
     parser.add_argument("--session-limit", type=int, default=0, help="0 means all non-empty sessions.")
+    parser.add_argument(
+        "--query-context",
+        choices=("none", "written"),
+        default="none",
+        help="When set to written, include the written LoCoMo sessions in each query prompt.",
+    )
     parser.add_argument("--max-tokens", type=int, default=64)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--timeout", type=float, default=120.0)
@@ -56,6 +62,7 @@ def main() -> int:
             temperature=args.temperature,
             timeout=args.timeout,
         )
+        query_context = build_query_context(row, session_limit=args.session_limit) if args.query_context == "written" else None
         for case in build_cases(row, limit=args.question_limit):
             query_started = time.perf_counter()
             response = post_chat(
@@ -64,11 +71,7 @@ def main() -> int:
                 messages=[
                     {
                         "role": "user",
-                        "content": (
-                            "Answer the question using the prior conversation memory. "
-                            "Give only the answer when possible.\n"
-                            f"Question: {case.question}"
-                        ),
+                        "content": build_query_prompt(case.question, query_context=query_context),
                     }
                 ],
                 session_key=session_key,
@@ -88,6 +91,7 @@ def main() -> int:
                     "score": score_prediction(prediction, case.answer),
                     "elapsed_ms": round((time.perf_counter() - query_started) * 1000, 3),
                     "write_turns": len(write_records),
+                    "query_context": args.query_context,
                 }
             )
     summary = summarize(records, elapsed_ms=round((time.perf_counter() - started) * 1000, 3))
@@ -99,6 +103,7 @@ def main() -> int:
         "sample_limit": args.sample_limit,
         "question_limit": args.question_limit,
         "session_limit": args.session_limit,
+        "query_context": args.query_context,
         "summary": summary,
         "records": records,
     }
@@ -152,6 +157,35 @@ def write_locomo_history(
             }
         )
     return records
+
+
+def selected_locomo_session_texts(row: dict[str, Any], *, session_limit: int) -> list[tuple[str, str]]:
+    selected = []
+    for session_name, session_text in locomo_session_texts(row):
+        if session_limit and len(selected) >= session_limit:
+            break
+        selected.append((session_name, session_text))
+    return selected
+
+
+def build_query_context(row: dict[str, Any], *, session_limit: int) -> str:
+    sessions = [session_text for _, session_text in selected_locomo_session_texts(row, session_limit=session_limit)]
+    return "\n\n".join(sessions)
+
+
+def build_query_prompt(question: str, *, query_context: str | None) -> str:
+    if query_context:
+        return (
+            "Answer the question using this conversation context. "
+            "Give only the answer when possible.\n\n"
+            f"{query_context}\n\n"
+            f"Question: {question}"
+        )
+    return (
+        "Answer the question using the prior conversation memory. "
+        "Give only the answer when possible.\n"
+        f"Question: {question}"
+    )
 
 
 def locomo_session_texts(row: dict[str, Any]):
