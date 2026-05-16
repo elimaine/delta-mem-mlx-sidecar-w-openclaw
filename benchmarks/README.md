@@ -103,3 +103,38 @@ These are still compact local probes, not a reproduction of the full paper
 benchmark suite. A useful result is a positive δ-mem delta over the plain
 backbone, especially in `no_context_recovery`. Exact hidden-fact recall is not
 the contract; measurable attention-shaped recovery is the signal.
+
+## MLX δ-mem Diagnostics
+
+Use `mlx_delta_diagnostics.py` to check whether the MLX adapter path is actually
+active:
+
+```sh
+python benchmarks/mlx_delta_diagnostics.py \
+  --adapter-dir /path/to/delta-mem-qwen3-4b-instruct-mlx-adapter \
+  --output benchmarks/results/mlx-delta-diagnostics.json
+```
+
+The diagnostic reports wrapped attention layers, δ-state norms, read norms,
+weight norms, and a controlled plain-vs-δ output comparison. A useful first
+check is nonzero wrapped layers plus nonzero state/read norms after a write.
+
+## LoCoMo-10 Sidecar Eval
+
+Use `locomo10_sidecar_eval.py` with the official δ-mem repo's
+`data/locomo10.json` sample to run a small LoCoMo-style sidecar probe:
+
+```sh
+python benchmarks/locomo10_sidecar_eval.py \
+  --data-file /path/to/delta-Mem/data/locomo10.json \
+  --base-url http://127.0.0.1:8765 \
+  --model delta-mem-qwen3-4b-mlx \
+  --sample-limit 1 \
+  --question-limit 10 \
+  --session-limit 4 \
+  --output benchmarks/results/locomo10-sidecar-delta.json
+```
+
+This is closer to the paper's LoCoMo setup than the synthetic memory probes, but
+it is still a small local sample and not a reproduction of the full official
+benchmark suite.
