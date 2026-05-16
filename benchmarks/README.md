@@ -138,3 +138,35 @@ python benchmarks/locomo10_sidecar_eval.py \
 This is closer to the paper's LoCoMo setup than the synthetic memory probes, but
 it is still a small local sample and not a reproduction of the full official
 benchmark suite.
+
+## Real OpenClaw Session Replay Eval
+
+Use `openclaw_session_replay_eval.py` when you want to test behavior against a
+real OpenClaw agent session instead of synthetic benchmark cases. Export and
+sanitize the session history first, then replay it into the sidecar under a
+stable session key and run behavior probes against the replayed memory:
+
+```sh
+python benchmarks/openclaw_session_replay_eval.py \
+  --history-file /path/to/sanitized-openclaw-history.jsonl \
+  --base-url http://127.0.0.1:8765 \
+  --model delta-mem-qwen3-4b-mlx \
+  --session-key openclaw:replay:example \
+  --probe 'model_choice||What model stack should this agent be using?||delta-mem-mlx' \
+  --probe 'transport||What transport should the integration use?||chat completions,X-OpenClaw-Session-Key' \
+  --output benchmarks/results/openclaw-session-replay-delta.json
+```
+
+The history file may be a JSON list, JSONL records, or a JSON object containing
+`messages`, `turns`, `history`, `events`, or `items`. Probe files may be JSON,
+JSONL, or an object containing `probes`, with each probe shaped like:
+
+```json
+{"name": "transport", "question": "What transport should the integration use?", "expected": ["chat completions"]}
+```
+
+For a useful comparison, run the same history and probes twice: once against the
+plain backbone model and once against the δ-mem sidecar profile. Compare
+`summary.score_mean`, `summary.passed`, and probe latency. This harness does not
+pull private OpenClaw gateway history directly; keeping export and sanitization
+outside the benchmark makes the public repo repeatable and safe to share.
