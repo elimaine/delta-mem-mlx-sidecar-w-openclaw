@@ -81,5 +81,6 @@ Use the benchmarks to compare plain backbone behavior against δ-mem behavior:
 
 - `benchmarks/openclaw_memory_eval.py`
 - `benchmarks/full_delta_mem_bench.py`
+- `wiki/Benchmark-Findings.md`
 
 The paper-style harness reports memory-heavy probes, no-context recovery, score deltas, ratios, and latency overhead.
