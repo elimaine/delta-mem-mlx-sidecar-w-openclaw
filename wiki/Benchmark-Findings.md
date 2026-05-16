@@ -16,7 +16,7 @@ Public repo: https://github.com/elimaine/delta-mem-mlx-sidecar-w-openclaw
 
 ## Terms
 
-QMD is a local markdown retrieval tool. In these tests, `qmd search` means BM25/full-text retrieval and `qmd vsearch` means embedding/vector similarity retrieval. A fresh named QMD index was built over sanitized OpenClaw memory fixtures so the test did not mutate the live OpenClaw/Sandy index.
+QMD is a local markdown retrieval tool. In these tests, `qmd search` means BM25/full-text retrieval and `qmd vsearch` means embedding/vector similarity retrieval. The retrieval tests used an isolated QMD index over sanitized OpenClaw memory fixtures so they did not mutate an operator's live index.
 
 Ygraph thoughts are graph-derived thought atoms from the local OpenClaw/ygraph workspace. They are candidate memory statements with provenance-style metadata. In this benchmark they were selected deterministically by keyword overlap, then injected as context.
 
@@ -62,7 +62,8 @@ Finding: reducing context can help, but not smoothly by token count. The determi
 
 ## Reproduction Notes
 
-- QMD search index: fresh named index `delta-mem-openclaw-fresh`.
-- Corpus: sanitized OpenClaw markdown fixtures derived from ignored local benchmark results.
-- QMD vector embedding ran on CPU inside Lima because Vulkan was missing.
-- Result JSON and JSONL artifacts are ignored under `benchmarks/results/`.
+- Build an isolated QMD index for the sanitized memory corpus.
+- Run `qmd search` and `qmd vsearch` against the same corpus and query.
+- Convert retrieved snippets into injected context fixtures with the same target replay.
+- Compare plain backbone and δ-mem sidecar runs with the same probes, temperature, and max-token settings.
+- Record context event count, character count, estimated token count, score, pass rate, and latency for each run.
