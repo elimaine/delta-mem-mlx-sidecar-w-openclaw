@@ -73,7 +73,7 @@ Upstream adapter:
 
 MLX-converted adapter:
 
-- TODO: add Hugging Face repo link after publishing `delta_mem_adapter_mlx.npz`.
+- https://huggingface.co/ofthetrees/delta-mem-qwen3-4b-instruct-mlx-adapter
 
 ## Verification
 

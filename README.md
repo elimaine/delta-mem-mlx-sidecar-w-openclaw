@@ -88,7 +88,7 @@ Upstream Torch adapter:
 
 Planned MLX-converted adapter artifact:
 
-- TODO: add Hugging Face repo link after publishing `delta_mem_adapter_mlx.npz`.
+- https://huggingface.co/ofthetrees/delta-mem-qwen3-4b-instruct-mlx-adapter
 
 The converted MLX artifact should be published as a small adapter repo, not as merged model weights.
 
