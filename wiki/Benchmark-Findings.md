@@ -41,6 +41,25 @@ The current evidence does not show a simple sweet spot based only on context siz
 
 The richer-language hypothesis is still plausible: wiki/ygraph process prose is useful to a human, but benchmark probes ask for direct recall of facts such as adapter location, exact LoCoMo numbers, and OpenClaw replay scores. A better next test is to normalize retrieved context into short fact triples and compare that against the same context left as rich prose.
 
+## Reduced QMD Context Sweep
+
+This sweep kept the target replay constant and varied only the injected QMD context budget. "Deterministic" means full QMD-hit document sections ranked by lexical overlap with probe terms. "Synthesized" means direct fact-style context synthesized from the same retrieved sanitized fixtures.
+
+| Method | Injected budget | Actual injected tokens | Total tokens | Plain | δ-mem | Ratio | Δ | Pass | Latency ratio |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| deterministic | `500` | `~490` | `~688` | `0.5625` | `0.7292` | `1.30x` | `+0.1667` | `5/8 -> 7/8` | `1.66x` |
+| deterministic | `400` | `~398` | `~596` | `0.5625` | `0.5542` | `0.99x` | `-0.0083` | `5/8 -> 6/8` | `1.57x` |
+| deterministic | `300` | `~296` | `~493` | `0.5625` | `0.6042` | `1.07x` | `+0.0417` | `5/8 -> 6/8` | `1.49x` |
+| deterministic | `200` | `~185` | `~382` | `0.5625` | `0.6042` | `1.07x` | `+0.0417` | `5/8 -> 6/8` | `1.26x` |
+| deterministic | `100` | `~98` | `~295` | `0.5625` | `0.6042` | `1.07x` | `+0.0417` | `5/8 -> 6/8` | `1.49x` |
+| synthesized | `500` | `~440` | `~638` | `0.5625` | `0.5542` | `0.99x` | `-0.0083` | `5/8 -> 6/8` | `1.48x` |
+| synthesized | `400` | `~390` | `~588` | `0.5625` | `0.5542` | `0.99x` | `-0.0083` | `5/8 -> 6/8` | `1.53x` |
+| synthesized | `300` | `~299` | `~496` | `0.5625` | `0.5292` | `0.94x` | `-0.0333` | `5/8 -> 5/8` | `1.61x` |
+| synthesized | `200` | `~194` | `~392` | `0.5625` | `0.5542` | `0.99x` | `-0.0083` | `5/8 -> 6/8` | `1.67x` |
+| synthesized | `100` | `~95` | `~293` | `0.5625` | `0.7292` | `1.30x` | `+0.1667` | `5/8 -> 7/8` | `1.69x` |
+
+Finding: reducing context can help, but not smoothly by token count. The deterministic 500-token pack and synthesized 100-token pack tied for best result (`1.30x`). Intermediate budgets often regressed toward zero or below baseline. This strongly suggests the important variable is whether the reduced context preserves the right high-priority facts in a usable order, not raw context volume.
+
 ## Reproduction Notes
 
 - QMD search index: fresh named index `delta-mem-openclaw-fresh`.
