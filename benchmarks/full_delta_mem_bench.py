@@ -122,7 +122,7 @@ def main() -> int:
     if not args.adapter_dir:
         raise SystemExit(
             "--adapter-dir is required for the delta profile. Set DELTA_MEM_ADAPTER_DIR "
-            "or pass --adapter-dir /path/to/delta-mem_qwen3_4b-instruct."
+            "or pass --adapter-dir /path/to/delta-mem-qwen3-4b-instruct-mlx-adapter."
         )
 
     uvicorn = str(Path(args.uvicorn).expanduser().resolve())

@@ -71,14 +71,14 @@ Most users can skip an OpenClaw plugin and configure this as a model provider on
 
 ## Released δ-mem Adapter
 
-The released public adapter targets `Qwen/Qwen3-4B-Instruct-2507`, not the small toy model. To run it locally through MLX, download the compatible MLX backbone and adapter, convert the adapter once, then start the sidecar with `DELTA_MEM_ADAPTER_DIR`.
+The released public adapter targets `Qwen/Qwen3-4B-Instruct-2507`, not the small toy model. To run it locally through MLX, download the compatible MLX backbone and the converted MLX adapter, then start the sidecar with `DELTA_MEM_ADAPTER_DIR`.
 
 ```sh
 hf download mlx-community/Qwen3-4B-Instruct-2507-4bit
-hf download declare-lab/delta-mem_qwen3_4b-instruct
+hf download ofthetrees/delta-mem-qwen3-4b-instruct-mlx-adapter
 ```
 
-See `delta-mem-sidecar/README.md` for the exact optional adapter run command.
+See `delta-mem-sidecar/README.md` for the exact optional adapter run command. If you need to rebuild the MLX artifact from the upstream Torch adapter, the converter is included in the sidecar package.
 
 ## Hugging Face Adapter Artifacts
 
@@ -86,7 +86,7 @@ Upstream Torch adapter:
 
 - https://huggingface.co/declare-lab/delta-mem_qwen3_4b-instruct
 
-Planned MLX-converted adapter artifact:
+Published MLX-converted adapter artifact:
 
 - https://huggingface.co/ofthetrees/delta-mem-qwen3-4b-instruct-mlx-adapter
 
@@ -110,7 +110,7 @@ python benchmarks/openclaw_memory_eval.py \
 For the released Qwen3 adapter path, use:
 
 ```sh
-export DELTA_MEM_ADAPTER_DIR=/path/to/declare-lab/delta-mem_qwen3_4b-instruct
+export DELTA_MEM_ADAPTER_DIR=/path/to/delta-mem-qwen3-4b-instruct-mlx-adapter
 python benchmarks/full_delta_mem_bench.py \
   --max-tokens 32 \
   --warmup 1

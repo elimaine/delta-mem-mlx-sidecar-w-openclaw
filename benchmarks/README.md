@@ -77,7 +77,7 @@ Use `full_delta_mem_bench.py` to benchmark the sidecar with the compatible
 Qwen3-4B MLX backbone both with and without the released delta-Mem adapter:
 
 ```sh
-export DELTA_MEM_ADAPTER_DIR=/path/to/declare-lab/delta-mem_qwen3_4b-instruct
+export DELTA_MEM_ADAPTER_DIR=/path/to/delta-mem-qwen3-4b-instruct-mlx-adapter
 python benchmarks/full_delta_mem_bench.py \
   --max-tokens 32 \
   --warmup 1 \

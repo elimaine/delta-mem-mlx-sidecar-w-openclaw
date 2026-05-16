@@ -60,10 +60,10 @@ The released adapter is compatible with Qwen3-4B, not the toy model:
 
 ```text
 mlx-community/Qwen3-4B-Instruct-2507-4bit
-declare-lab/delta-mem_qwen3_4b-instruct
+ofthetrees/delta-mem-qwen3-4b-instruct-mlx-adapter
 ```
 
-Download the model and adapter, convert the adapter checkpoint once, then set `DELTA_MEM_ADAPTER_DIR` when starting the sidecar.
+Download the model and converted MLX adapter, then set `DELTA_MEM_ADAPTER_DIR` when starting the sidecar. The upstream Torch adapter remains available if you need to regenerate the MLX artifact.
 
 ## Hugging Face Adapter Artifacts
 
