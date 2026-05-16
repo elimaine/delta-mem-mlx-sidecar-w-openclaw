@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@mariozechner/pi-ai": ["test/stubs/pi-ai.ts"],
+      "openclaw/plugin-sdk": ["test/stubs/openclaw/plugin-sdk.ts"],
+      "openclaw/plugin-sdk/agent-harness-runtime": ["test/stubs/openclaw/plugin-sdk/agent-harness-runtime.ts"]
+    },
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "test/stubs/**/*.ts"]
+}

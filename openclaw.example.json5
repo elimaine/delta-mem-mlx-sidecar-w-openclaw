@@ -1,0 +1,55 @@
+{
+  // Merge this shape into your OpenClaw config. Keep the session header stable
+  // per logical agent/session so the sidecar can maintain per-session state.
+  models: {
+    providers: {
+      "delta-mem-mlx": {
+        baseUrl: "http://host.lima.internal:8765/v1",
+        apiKey: "local",
+        auth: "api-key",
+        api: "openai-completions",
+        request: {
+          allowPrivateNetwork: true,
+        },
+        headers: {
+          "X-OpenClaw-Session-Key": "agent:pike-agent:main",
+        },
+        params: {
+          transportProtocol: "openai-chat-completions",
+          endpoint: "/v1/chat/completions",
+        },
+        models: [
+          {
+            id: "qwen2.5-0.5b-mlx-test",
+            name: "Qwen2.5 0.5B MLX sidecar smoke model",
+            api: "openai-completions",
+            reasoning: false,
+            input: ["text"],
+            contextWindow: 32768,
+            maxTokens: 4096,
+            cost: {
+              input: 0,
+              output: 0,
+              cacheRead: 0,
+              cacheWrite: 0,
+            },
+            params: {
+              experimental: true,
+              requiredSessionHeader: "X-OpenClaw-Session-Key",
+              transportProtocol: "openai-chat-completions",
+              endpoint: "/v1/chat/completions",
+            },
+            headers: {
+              "X-OpenClaw-Session-Key": "agent:pike-agent:main",
+            },
+          },
+        ],
+      },
+    },
+    aliases: {
+      "delta-mem-mlx/qwen2.5-0.5b-mlx-test": {
+        alias: "delta-mem-mlx",
+      },
+    },
+  },
+}

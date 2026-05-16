@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "delta-mem-sidecar"
+version = "0.1.0"
+description = "OpenAI-compatible local sidecar for delta-Mem runtime experiments."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110,<1",
+    "pydantic>=2,<3",
+    "uvicorn[standard]>=0.27,<1",
+]
+
+[project.optional-dependencies]
+test = [
+    "httpx>=0.26,<1",
+    "pytest>=8,<9",
+]
+mlx = [
+    "mlx-lm>=0.21.4,<1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

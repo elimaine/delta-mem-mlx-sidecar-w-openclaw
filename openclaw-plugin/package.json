@@ -1,0 +1,30 @@
+{
+  "name": "@clawfactory/openclaw-custom-embedded-harness-plugin",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "OpenClaw custom embedded harness plugin template and example harness implementations.",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  },
+  "keywords": [
+    "openclaw",
+    "embedded-harness",
+    "opencode",
+    "agent-harness"
+  ],
+  "license": "MIT"
+}

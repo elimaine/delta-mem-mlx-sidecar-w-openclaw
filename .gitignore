@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Node / plugin build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local model/cache artifacts
+models/
+adapters/
+state/
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.npz
+
+# Benchmark outputs
+benchmarks/results/
+*.bench.json
+
+# Local editor/system files
+.DS_Store
+.idea/
+.vscode/
+
+# Project-local scratch
+tmp/
+scratch/
