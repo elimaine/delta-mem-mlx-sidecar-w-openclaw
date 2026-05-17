@@ -1,5 +1,7 @@
 # delta-mem-mlx-sidecar-w-openclaw
 
+**OpenClaw plugin note:** the most up-to-date OpenClaw plugin implementation now lives in its own repo: https://github.com/elimaine/openclaw-delta-mem-mlx-plugin. Use this sidecar repo for the MLX sidecar/runtime and benchmark notes; use the plugin repo for current OpenClaw plugin install/start behavior.
+
 OpenAI-compatible sidecar for running local MLX models directly or behind OpenClaw, with an optional δ-mem adapter path for session-shaped memory.
 
 δ-mem augments a frozen transformer with a compact online memory state that reads and writes through attention. The paper reports an average 1.10x gain over the frozen backbone, 1.31x on MemoryAgentBench, and 1.20x on LoCoMo using a small online state rather than full fine-tuning or explicit context extension.
