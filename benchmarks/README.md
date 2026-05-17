@@ -170,3 +170,44 @@ plain backbone model and once against the δ-mem sidecar profile. Compare
 `summary.score_mean`, `summary.passed`, and probe latency. This harness does not
 pull private OpenClaw gateway history directly; keeping export and sanitization
 outside the benchmark makes the public repo repeatable and safe to share.
+
+## Sanitized Transcript Replay Toolbelt
+
+Use `openclaw_transcript_toolbelt.py` for larger local replay batches without
+hammering model servers. It keeps calls single-threaded, writes rich JSON/JSONL
+artifacts, and emits SVG graph summaries.
+
+Example for a local Lima OpenClaw instance:
+
+```sh
+python benchmarks/openclaw_transcript_toolbelt.py export-lima \
+  --instance clawfactory \
+  --output-dir benchmarks/results/openclaw-16/raw \
+  --limit 16
+
+python benchmarks/openclaw_transcript_toolbelt.py sanitize \
+  benchmarks/results/openclaw-16/raw/*.jsonl \
+  --output-dir benchmarks/results/openclaw-16/sanitized \
+  --limit 16
+
+python benchmarks/openclaw_transcript_toolbelt.py probes \
+  --sessions-file benchmarks/results/openclaw-16/sanitized/sessions.jsonl \
+  --output-dir benchmarks/results/openclaw-16/probes
+
+python benchmarks/openclaw_transcript_toolbelt.py run \
+  --sessions-file benchmarks/results/openclaw-16/sanitized/sessions.jsonl \
+  --probes-file benchmarks/results/openclaw-16/probes/probes.jsonl \
+  --base-url http://127.0.0.1:8765 \
+  --model delta-mem-qwen3-4b-mlx \
+  --output-dir benchmarks/results/openclaw-16/run
+
+python benchmarks/openclaw_transcript_toolbelt.py report \
+  --results-jsonl benchmarks/results/openclaw-16/run/results.jsonl \
+  --output-dir benchmarks/results/openclaw-16/report
+```
+
+The base condition is a no-history session using the same local model. The
+replay condition first stores the sanitized transcript under a stable session
+key and then asks the same eight deterministic probes. This measures whether
+replayed session memory improves recall of sanitized transcript facts; it is a
+confidence benchmark, not a substitute for task-specific human scoring.
