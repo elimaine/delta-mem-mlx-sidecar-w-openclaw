@@ -86,7 +86,7 @@ The δ-mem paper reports meaningful gains using Qwen3-4B-Instruct: `1.10x` avera
 
 ## OpenClaw 16 Transcript Replay
 
-Run date: 2026-05-16. Source: live OpenClaw session files exported from the `clawfactory` Lima VM, then sanitized locally. Very large sessions were excluded with a 3 MB cap. The run used 16 sanitized transcripts, 8 deterministic probes per transcript, and a no-history base case for each transcript. Calls were single-threaded against the local `delta-mem-qwen3-4b-mlx` sidecar.
+Run date: 2026-05-16. Source: live OpenClaw session files exported from a local Lima VM, then sanitized locally. Very large sessions were excluded with a 3 MB cap. The run used 16 sanitized transcripts, 8 deterministic probes per transcript, and a no-history base case for each transcript. Calls were single-threaded against the local `delta-mem-qwen3-4b-mlx` sidecar.
 
 | Metric | No-history base | Replayed history |
 | --- | ---: | ---: |

@@ -18,7 +18,7 @@ from benchmarks.openclaw_transcript_toolbelt import (  # noqa: E402
 
 
 def test_sanitize_text_redacts_common_sensitive_shapes() -> None:
-    text = sanitize_text("email me@example.com token sk-abc123456789012345678901234 path /Users/elimaine/secret")
+    text = sanitize_text("email me@example.com token sk-abc123456789012345678901234 path /Users/example/secret")
 
     assert "<redacted-email>" in text
     assert "<redacted-token>" in text

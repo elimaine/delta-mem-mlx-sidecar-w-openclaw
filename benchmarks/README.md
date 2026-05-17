@@ -181,7 +181,8 @@ Example for a local Lima OpenClaw instance:
 
 ```sh
 python benchmarks/openclaw_transcript_toolbelt.py export-lima \
-  --instance clawfactory \
+  --instance <lima-instance> \
+  --remote-root <remote-openclaw-agents-dir> \
   --output-dir benchmarks/results/openclaw-16/raw \
   --limit 16
 

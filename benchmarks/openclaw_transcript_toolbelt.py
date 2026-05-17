@@ -68,8 +68,8 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     export_lima = subparsers.add_parser("export-lima", help="Copy session JSONL files from a Lima OpenClaw VM.")
-    export_lima.add_argument("--instance", default="clawfactory")
-    export_lima.add_argument("--remote-root", default="/srv/clawfactory/bot_repos/sandy/state/agents")
+    export_lima.add_argument("--instance", required=True, help="Lima instance name.")
+    export_lima.add_argument("--remote-root", required=True, help="Remote OpenClaw agents directory.")
     export_lima.add_argument("--remote-path-pattern", default="*/sessions/*.jsonl")
     export_lima.add_argument("--output-dir", type=Path, required=True)
     export_lima.add_argument("--limit", type=int, default=16)
