@@ -116,8 +116,8 @@ python benchmarks/full_delta_mem_bench.py \
   --warmup 1
 ```
 
-Current local benchmark findings, including OpenClaw context-injection results,
-QMD search/vsearch comparisons, ygraph notes, and context-size totals are in
+Current local benchmark findings, including OpenClaw retrieved-memory preload
+results, QMD search/vsearch comparisons, ygraph notes, and preload-size totals are in
 `wiki/Benchmark-Findings.md`.
 
 ## Repository Layout

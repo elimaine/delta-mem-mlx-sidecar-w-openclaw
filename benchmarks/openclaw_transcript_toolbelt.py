@@ -401,7 +401,7 @@ def build_probes(session: dict[str, Any]) -> list[dict[str, Any]]:
         },
         {
             "name": "sanitized_kind",
-            "question": "Was this benchmark input raw private data or a sanitized transcript?",
+            "question": "Was this benchmark input raw local data or a sanitized transcript?",
             "expected": ["sanitized"],
         },
     ]

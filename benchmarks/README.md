@@ -168,8 +168,8 @@ JSONL, or an object containing `probes`, with each probe shaped like:
 For a useful comparison, run the same history and probes twice: once against the
 plain backbone model and once against the δ-mem sidecar profile. Compare
 `summary.score_mean`, `summary.passed`, and probe latency. This harness does not
-pull private OpenClaw gateway history directly; keeping export and sanitization
-outside the benchmark makes the public repo repeatable and safe to share.
+pull local OpenClaw gateway history directly; keeping export and sanitization
+outside the benchmark makes the repo repeatable and safe to share.
 
 ## Sanitized Transcript Replay Toolbelt
 
@@ -211,3 +211,21 @@ replay condition first stores the sanitized transcript under a stable session
 key and then asks the same eight deterministic probes. This measures whether
 replayed session memory improves recall of sanitized transcript facts; it is a
 confidence benchmark, not a substitute for task-specific human scoring.
+
+## Latency Scatterplot
+
+Use `latency_scatterplot.py` to regenerate the paired latency-ratio vs
+response-delta chart without rebuilding the full Altair report pack:
+
+```sh
+python benchmarks/latency_scatterplot.py \
+  --results-dir benchmarks/results \
+  --summary-json benchmarks/results/openclaw-16/report/summary.json \
+  --output benchmarks/results/openclaw-16/altair-report/16-cost-of-memory-signal.png
+```
+
+The tool uses paired `*-plain.json` and `*-delta.json` files, strict-rescores
+saved OpenClaw probe outputs, excludes the deprecated 200-token and 400-token
+deterministic and synthesized QMD rows, labels points with compact IDs, includes
+benchmark family names in a two-column guide, includes tracked paper-reference
+fixture rows, and keeps the latency-ratio axis tight with `x`-suffixed ticks.

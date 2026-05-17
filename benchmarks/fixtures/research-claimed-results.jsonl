@@ -1,0 +1,3 @@
+{"label":"Paper claimed average","latency_ratio":1.0,"response_delta":0.10,"kind":"research claimed","bench":"research","run_n":"paper","source":"delta-mem paper reported average lift"}
+{"label":"Paper claimed MemoryAgentBench","latency_ratio":1.0,"response_delta":0.31,"kind":"research claimed","bench":"research","run_n":"paper","source":"delta-mem paper reported MemoryAgentBench lift"}
+{"label":"Paper claimed LoCoMo","latency_ratio":1.0,"response_delta":0.20,"kind":"research claimed","bench":"research","run_n":"paper","source":"delta-mem paper reported LoCoMo lift"}

@@ -23,7 +23,7 @@ class Candidate:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build a deterministic context injection list for OpenClaw replay.")
+    parser = argparse.ArgumentParser(description="Build a deterministic memory-preload list for OpenClaw replay.")
     parser.add_argument("--memory-file", type=Path, action="append", required=True)
     parser.add_argument("--target-file", type=Path, required=True)
     parser.add_argument("--probes-file", type=Path)
@@ -42,7 +42,7 @@ def main() -> int:
     events.extend(load_history_events(args.target_file))
 
     result = {
-        "kind": "deterministic_context_list",
+        "kind": "deterministic_memory_preload_list",
         "memory_files": [str(path) for path in args.memory_file],
         "target_file": str(args.target_file),
         "top_k": args.top_k,
@@ -132,7 +132,7 @@ def render_context_events(selected: list[dict[str, Any]], *, max_item_chars: int
     if not selected:
         return []
     lines = [
-        "Deterministic context list selected by lexical overlap against the target session and probes.",
+        "Deterministic memory preload selected by lexical overlap against the target session and probes.",
         "Use these as relevant older memory items; prefer newer target-session turns when they conflict.",
     ]
     for rank, item in enumerate(selected, start=1):
