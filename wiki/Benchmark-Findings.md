@@ -4,7 +4,7 @@ These are small local benchmark runs for the MLX sidecar and optional δ-mem ada
 
 Public repo: https://github.com/elimaine/delta-mem-mlx-sidecar-w-openclaw
 
-Version: `v0.2.1`<br>
+Version: `v0.2.2`<br>
 Last updated: `2026-05-17`
 
 ## Glossary
@@ -31,8 +31,8 @@ Last updated: `2026-05-17`
 The strongest local comparisons improved with the δ-mem TSW adapter attached, but the evidence splits into clear categories. Score here is based on correct answers.
 
 - **Non-OpenClaw local tests**: corrected LoCoMo-10 showed a small `1.07x` score lift with about `1.95x` total runtime.
-- **OpenClaw-shaped local tests**: curated/retrieved memory-preload runs showed larger directional gains, up to `1.30x`, but most of those used the older lenient scorer.
-- **Strict broad OpenClaw test**: the newer 16-transcript replay showed only weak exact-recall recovery: `+0.0391` absolute score delta, not a ratio, because the no-history base was `0.0000`.
+- **OpenClaw-shaped local tests**: the strongest QMD memory-preload runs were much more encouraging: QMD search and QMD vsearch both improved from `0.5625` plain to `0.7292` δ-mem, a `1.30x` lift. The cost was real but bounded in these runs: `1.63x` probe latency for QMD search and `1.48x` for QMD vsearch. These rows use the older lenient scorer, so they are directional rather than final accuracy claims.
+- **Strict broad OpenClaw test**: the newer 16-transcript replay used the stricter scorer and a broader sanitized transcript set. It showed only weak exact-recall recovery: `+0.0391` absolute score delta, not a ratio, because the no-history base was `0.0000`. Its latency overhead was effectively flat at `1.01x`, so the gap is accuracy/retrieval quality, not speed.
 
 That alone is reason to be excited about this.
 
