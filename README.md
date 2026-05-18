@@ -1,6 +1,6 @@
 # delta-mem-mlx-sidecar-w-openclaw
 
-**Migration note:** this repo may lag behind the most up-to-date implementation now lives in the Openclaw native plugin repo: https://github.com/elimaine/openclaw-delta-mem-mlx-plugin which can be installed sidecar only. Keeping v0 here to preserve links and for benchmark tests.
+**Migration note:** this repo may lag behind the most up-to-date implementation which now lives in the Openclaw native plugin repo: https://github.com/elimaine/openclaw-delta-mem-mlx-plugin which can be installed sidecar only. Keeping v0 here to preserve links and for benchmark tests.
 
 OpenAI-compatible sidecar for running local MLX models directly or behind OpenClaw, with an optional δ-mem adapter path for session-shaped memory.
 
