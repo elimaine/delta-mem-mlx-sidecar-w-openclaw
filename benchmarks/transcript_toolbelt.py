@@ -16,7 +16,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from benchmarks.openclaw_session_replay_eval import (  # noqa: E402
+from benchmarks.session_replay_eval import (  # noqa: E402
     PASS_THRESHOLD,
     Probe,
     chunk_history,
@@ -48,7 +48,7 @@ STOPWORDS = {
     "message",
     "need",
     "not",
-    "openclaw",
+    "session",
     "please",
     "should",
     "that",
@@ -63,11 +63,11 @@ STOPWORDS = {
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Toolbelt for sanitized OpenClaw transcript replay benchmarks.")
+    parser = argparse.ArgumentParser(description="Toolbelt for sanitized session transcript replay benchmarks.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    export_local = subparsers.add_parser("export-local", help="Copy session JSONL files from a local OpenClaw agents directory.")
-    export_local.add_argument("--sessions-root", type=Path, required=True, help="Local OpenClaw agents directory.")
+    export_local = subparsers.add_parser("export-local", help="Copy session JSONL files from a local session agents directory.")
+    export_local.add_argument("--sessions-root", type=Path, required=True, help="Local session agents directory.")
     export_local.add_argument("--path-pattern", default="*/sessions/*.jsonl")
     export_local.add_argument("--output-dir", type=Path, required=True)
     export_local.add_argument("--limit", type=int, default=16)
@@ -91,7 +91,7 @@ def main() -> int:
     run.add_argument("--probes-file", type=Path, required=True)
     run.add_argument("--base-url", default="http://127.0.0.1:8765")
     run.add_argument("--model", default="delta-mem-qwen3-4b-mlx")
-    run.add_argument("--session-prefix", default="openclaw-16")
+    run.add_argument("--session-prefix", default="session-16")
     run.add_argument("--output-dir", type=Path, required=True)
     run.add_argument("--chunk-chars", type=int, default=2600)
     run.add_argument("--max-tokens", type=int, default=40)
@@ -327,14 +327,14 @@ def sanitize_text(text: str) -> str:
 
 def build_sanitized_session(path: Path, events: list[dict[str, str]]) -> dict[str, Any]:
     source_hash = hashlib.sha256(str(path).encode("utf-8")).hexdigest()[:12]
-    session_id = f"oc16-{source_hash}"
+    session_id = f"sess-{source_hash}"
     terms = top_terms(events, limit=6)
     length_class = "short" if len(events) < 15 else "medium" if len(events) < 45 else "long"
     header = {
         "role": "system",
         "content": (
-            f"Sanitized OpenClaw benchmark transcript marker: {session_id}. "
-            f"Source class: openclaw-session. Sanitized turn count: {len(events)}. "
+            f"Sanitized benchmark transcript marker: {session_id}. "
+            f"Source class: session-transcript. Sanitized turn count: {len(events)}. "
             f"Length class: {length_class}. Topic terms: {', '.join(terms)}."
         ),
     }
@@ -372,7 +372,7 @@ def build_probes(session: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "name": "source_class",
             "question": "What source class was stated in the replayed sanitized transcript header?",
-            "expected": ["openclaw-session"],
+            "expected": ["session-transcript"],
         },
         {
             "name": "turn_count",
@@ -401,7 +401,7 @@ def build_probes(session: dict[str, Any]) -> list[dict[str, Any]]:
         },
         {
             "name": "sanitized_kind",
-            "question": "Was this benchmark input raw local data or a sanitized transcript?",
+            "question": "Was this benchmark input raw private data or a sanitized transcript?",
             "expected": ["sanitized"],
         },
     ]
@@ -554,7 +554,7 @@ def write_bar_svg(path: Path, summary: dict[str, Any]) -> None:
     ]
     width, height = 760, 420
     max_bar = 260
-    parts = [svg_header(width, height), '<text x="24" y="34" class="title">OpenClaw 16 Transcript Replay Summary</text>']
+    parts = [svg_header(width, height), '<text x="24" y="34" class="title">Sanitized Transcript Replay Summary</text>']
     for index, (label, value, color) in enumerate(bars):
         y = 80 + index * 72
         w = max(2, value * max_bar)
@@ -588,7 +588,7 @@ def write_delta_svg(path: Path, sessions: list[dict[str, Any]]) -> None:
 def render_markdown_report(summary: dict[str, Any], bars: Path, deltas: Path) -> str:
     return textwrap.dedent(
         f"""\
-        # OpenClaw 16 Transcript Replay Benchmark
+        # Sanitized Transcript Replay Benchmark
 
         Sanitized transcripts: `{summary['transcripts']}`
         Probes per transcript: `{summary['probes_per_transcript']}`

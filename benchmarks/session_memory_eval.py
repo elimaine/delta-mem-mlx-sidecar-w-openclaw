@@ -33,11 +33,11 @@ CASES = [
         name="correction_adoption",
         session_key="eval:correction",
         turns=[
-            "Remember that the project codename is Northstar.",
-            "Correction: the project codename is Delta Northstar.",
+            "Remember that the project codename is Orion.",
+            "Correction: the project codename is Delta Orion.",
             "What is the current project codename?",
         ],
-        expected_substrings=["Delta Northstar"],
+        expected_substrings=["Delta Orion"],
     ),
     EvalCase(
         name="session_isolation",
@@ -61,7 +61,7 @@ CASES = [
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="OpenClaw-style memory eval harness.")
+    parser = argparse.ArgumentParser(description="Session memory eval harness.")
     parser.add_argument("--base-url", default="http://127.0.0.1:8765")
     parser.add_argument("--model", default="delta-mem-fake")
     parser.add_argument("--timeout", type=float, default=30.0)
@@ -135,7 +135,7 @@ def post_chat(
         data=body,
         headers={
             "Content-Type": "application/json",
-            "X-OpenClaw-Session-Key": session_key,
+            "X-Delta-Mem-Session-Key": session_key,
         },
         method="POST",
     )

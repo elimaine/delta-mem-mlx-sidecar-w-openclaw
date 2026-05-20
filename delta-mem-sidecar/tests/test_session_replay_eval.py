@@ -8,7 +8,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from benchmarks.openclaw_session_replay_eval import (  # noqa: E402
+from benchmarks.session_replay_eval import (  # noqa: E402
     PASS_THRESHOLD,
     chunk_history,
     load_history_events,
@@ -18,14 +18,14 @@ from benchmarks.openclaw_session_replay_eval import (  # noqa: E402
 )
 
 
-def test_load_history_events_accepts_openclaw_style_object(tmp_path: Path) -> None:
+def test_load_history_events_accepts_nested_event_object(tmp_path: Path) -> None:
     history_file = tmp_path / "history.json"
     history_file.write_text(
         json.dumps(
             {
                 "events": [
                     {"type": "agent", "message": "Use delta-mem-mlx for this session."},
-                    {"speaker": "human", "content": [{"text": "Spawn pike tests."}]},
+                    {"speaker": "human", "content": [{"text": "Spawn orion tests."}]},
                     {"role": "tool", "body": ""},
                 ]
             }
@@ -37,7 +37,7 @@ def test_load_history_events_accepts_openclaw_style_object(tmp_path: Path) -> No
 
     assert events == [
         {"role": "assistant", "content": "Use delta-mem-mlx for this session."},
-        {"role": "user", "content": "Spawn pike tests."},
+        {"role": "user", "content": "Spawn orion tests."},
     ]
 
 
@@ -96,8 +96,8 @@ def test_score_output_uses_overlap_metrics() -> None:
 
 def test_score_output_requires_all_expected_items() -> None:
     score = score_output(
-        "OpenClaw should be optional.",
-        ["optional", "runnable without OpenClaw", "not a default requirement"],
+        "External gateways should be optional.",
+        ["optional", "runnable without external gateway", "not a default requirement"],
     )
 
     assert 0 < score["score"] < PASS_THRESHOLD
@@ -138,10 +138,10 @@ def test_score_output_accepts_negated_wording_variants() -> None:
     assert score["score"] == 1.0
 
 
-def test_score_output_accepts_optional_openclaw_wording() -> None:
+def test_score_output_accepts_optional_gateway_wording() -> None:
     score = score_output(
-        "OpenClaw should not be required. The repository can operate independently without OpenClaw.",
-        ["optional", "runnable without OpenClaw", "not a default requirement"],
+        "External gateways should be optional, not required. The repository can operate independently without an external gateway.",
+        ["optional", "runnable without external gateway", "not a default requirement"],
     )
 
     assert score["score"] >= PASS_THRESHOLD

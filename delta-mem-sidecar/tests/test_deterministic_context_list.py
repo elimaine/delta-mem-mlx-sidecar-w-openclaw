@@ -14,11 +14,11 @@ from benchmarks.deterministic_context_list import (  # noqa: E402
     render_context_events,
     tokens,
 )
-from benchmarks.openclaw_session_replay_eval import Probe  # noqa: E402
+from benchmarks.session_replay_eval import Probe  # noqa: E402
 
 
 def test_tokens_are_lowercase_and_skip_common_words() -> None:
-    assert tokens("What should OpenClaw use with MLX?") == {"openclaw", "mlx"}
+    assert tokens("What should session use with MLX?") == {"session", "mlx"}
 
 
 def test_context_query_includes_probe_expected_terms_and_target() -> None:
@@ -33,12 +33,12 @@ def test_context_query_includes_probe_expected_terms_and_target() -> None:
 
 def test_rank_candidates_is_deterministic_with_tie_breaks() -> None:
     candidates = [
-        Candidate("b.jsonl", 0, "assistant", "OpenClaw optional integration."),
-        Candidate("a.jsonl", 1, "assistant", "OpenClaw optional plugin."),
+        Candidate("b.jsonl", 0, "assistant", "session optional integration."),
+        Candidate("a.jsonl", 1, "assistant", "session optional plugin."),
         Candidate("a.jsonl", 0, "assistant", "Unrelated note."),
     ]
 
-    ranked = rank_candidates(candidates, query_terms={"openclaw", "optional"})
+    ranked = rank_candidates(candidates, query_terms={"session", "optional"})
 
     assert ranked[0]["candidate"].source == "a.jsonl"
     assert ranked[0]["candidate"].index == 1
@@ -49,9 +49,9 @@ def test_rank_candidates_is_deterministic_with_tie_breaks() -> None:
 def test_render_context_events_creates_single_system_event() -> None:
     selected = [
         {
-            "candidate": Candidate("memory.jsonl", 0, "assistant", "OpenClaw should be optional."),
+            "candidate": Candidate("memory.jsonl", 0, "assistant", "session should be optional."),
             "score": 1.0,
-            "matched_terms": ["openclaw", "optional"],
+            "matched_terms": ["session", "optional"],
         }
     ]
 
@@ -59,4 +59,4 @@ def test_render_context_events_creates_single_system_event() -> None:
 
     assert len(events) == 1
     assert events[0]["role"] == "system"
-    assert "OpenClaw should be optional" in events[0]["content"]
+    assert "session should be optional" in events[0]["content"]

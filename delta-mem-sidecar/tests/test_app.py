@@ -17,7 +17,7 @@ def test_health_and_models() -> None:
     assert models.json()["data"][0]["id"] == "delta-test"
 
 
-def test_chat_requires_openclaw_session_key() -> None:
+def test_chat_requires_delta_mem_session_key() -> None:
     client = TestClient(create_app())
 
     response = client.post(
@@ -26,7 +26,20 @@ def test_chat_requires_openclaw_session_key() -> None:
     )
 
     assert response.status_code == 400
-    assert "X-OpenClaw-Session-Key" in response.json()["detail"]
+    assert "X-Delta-Mem-Session-Key" in response.json()["detail"]
+
+
+def test_chat_accepts_delta_mem_session_key() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/v1/chat/completions",
+        headers={"X-Delta-Mem-Session-Key": "session-a"},
+        json={"model": "delta-mem-fake", "messages": [{"role": "user", "content": "hi"}]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == "fake[1]: hi"
 
 
 def test_state_isolated_by_session_key() -> None:
@@ -76,7 +89,7 @@ def test_streaming_returns_openai_compatible_sse_chunks() -> None:
     with client.stream(
         "POST",
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": "session-a"},
+        headers={"X-Delta-Mem-Session-Key": "session-a"},
         json={
             "model": "delta-mem-fake",
             "stream": True,
@@ -88,6 +101,8 @@ def test_streaming_returns_openai_compatible_sse_chunks() -> None:
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
     assert response.headers[STATE_HASH_HEADER]
+    assert response.headers["X-Delta-Attention-State-Count"] == "0"
+    assert response.headers["X-Delta-Attention-State-Source"] == "none"
     assert '"role":"assistant"' in body
     assert '"content":"fake[1]: hi"' in body
     assert body.rstrip().endswith("data: [DONE]")
@@ -98,7 +113,7 @@ def test_chat_accepts_rich_content_parts() -> None:
 
     response = client.post(
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": "session-a"},
+        headers={"X-Delta-Mem-Session-Key": "session-a"},
         json={
             "model": "delta-mem-fake",
             "messages": [
@@ -118,7 +133,7 @@ def test_chat_prepends_delta_mem_session_preamble(monkeypatch) -> None:
 
     response = client.post(
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": "session-a"},
+        headers={"X-Delta-Mem-Session-Key": "session-a"},
         json={
             "model": "delta-capture",
             "messages": [{"role": "user", "content": "hello"}],
@@ -139,7 +154,7 @@ def test_chat_can_disable_session_preamble(monkeypatch) -> None:
 
     response = client.post(
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": "session-a"},
+        headers={"X-Delta-Mem-Session-Key": "session-a"},
         json={
             "model": "delta-capture",
             "messages": [{"role": "user", "content": "hello"}],
@@ -150,6 +165,50 @@ def test_chat_can_disable_session_preamble(monkeypatch) -> None:
     assert runtime.last_messages == [ChatMessage(role="user", content="hello")]
 
 
+def test_attention_state_preloads_state_before_user_turn() -> None:
+    runtime = CaptureRuntime()
+    client = TestClient(create_app(runtime))
+
+    response = client.post(
+        "/v1/chat/completions",
+        headers={"X-Delta-Mem-Session-Key": "session-a"},
+        json={
+            "model": "delta-capture",
+            "attention_state": [{"text": "retrieved memory fact"}],
+            "messages": [{"role": "user", "content": "hello"}],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["X-Delta-Attention-State-Count"] == "1"
+    assert len(runtime.calls) == 2
+    assert runtime.calls[0][1].content == "retrieved memory fact"
+    assert runtime.calls[0][1].role == "user"
+    assert runtime.calls[1][-1] == ChatMessage(role="user", content="hello")
+
+
+def test_attention_state_header_accepts_json_snippets() -> None:
+    runtime = CaptureRuntime()
+    client = TestClient(create_app(runtime))
+
+    response = client.post(
+        "/v1/chat/completions",
+        headers={
+            "X-Delta-Mem-Session-Key": "session-a",
+            "X-Delta-Attention-State": '[{"snippet":"header memory"}]',
+        },
+        json={
+            "model": "delta-capture",
+            "messages": [{"role": "user", "content": "hello"}],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["X-Delta-Attention-State-Count"] == "1"
+    assert len(runtime.calls) == 2
+    assert runtime.calls[0][1].content == "header memory"
+
+
 def test_state_persistence_round_trips_fake_runtime(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("DELTA_MEM_STATE_DIR", str(tmp_path))
     app = create_app()
@@ -157,7 +216,7 @@ def test_state_persistence_round_trips_fake_runtime(tmp_path, monkeypatch) -> No
 
     first = client.post(
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": "persisted-session"},
+        headers={"X-Delta-Mem-Session-Key": "persisted-session"},
         json={
             "model": "delta-mem-fake",
             "messages": [{"role": "user", "content": "first"}],
@@ -177,7 +236,7 @@ def test_state_persistence_round_trips_fake_runtime(tmp_path, monkeypatch) -> No
 
     second = second_client.post(
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": "persisted-session"},
+        headers={"X-Delta-Mem-Session-Key": "persisted-session"},
         json={
             "model": "delta-mem-fake",
             "messages": [{"role": "user", "content": "second"}],
@@ -191,7 +250,7 @@ def test_state_persistence_round_trips_fake_runtime(tmp_path, monkeypatch) -> No
 def _chat(client: TestClient, session_key: str, content: str) -> dict:
     response = client.post(
         "/v1/chat/completions",
-        headers={"X-OpenClaw-Session-Key": session_key},
+        headers={"X-Delta-Mem-Session-Key": session_key},
         json={
             "model": "delta-mem-fake",
             "messages": [{"role": "user", "content": content}],
@@ -207,6 +266,7 @@ class CaptureRuntime:
 
     def __init__(self) -> None:
         self.last_messages: list[ChatMessage] | None = None
+        self.calls: list[list[ChatMessage]] = []
 
     def fresh_state(self) -> RuntimeState:
         return RuntimeState()
@@ -220,4 +280,5 @@ class CaptureRuntime:
         temperature: float | None = None,
     ) -> GenerationResult:
         self.last_messages = messages
+        self.calls.append(messages)
         return GenerationResult(content="captured", prompt_tokens=1, completion_tokens=1)

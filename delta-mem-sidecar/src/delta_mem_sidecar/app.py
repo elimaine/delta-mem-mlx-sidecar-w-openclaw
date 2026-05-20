@@ -4,22 +4,25 @@ import json
 import os
 import time
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
 from delta_mem_sidecar.config import create_runtime_from_env
-from delta_mem_sidecar.runtime import ChatMessage, DeltaRuntime
+from delta_mem_sidecar.runtime import ChatMessage, DeltaRuntime, RuntimeState
 from delta_mem_sidecar.schemas import ChatCompletionRequest, JsonDict, StateMetadataResponse
 from delta_mem_sidecar.state import InMemoryStateStore, StateMetadata
 
-SESSION_HEADER = "X-OpenClaw-Session-Key"
+SESSION_HEADER = "X-Delta-Mem-Session-Key"
+ATTENTION_STATE_HEADER = "X-Delta-Attention-State"
 STATE_HASH_HEADER = "X-Delta-State-Key-Hash"
+ATTENTION_STATE_COUNT_HEADER = "X-Delta-Attention-State-Count"
+ATTENTION_STATE_SOURCE_HEADER = "X-Delta-Attention-State-Source"
 DEFAULT_SESSION_PREAMBLE = (
     "Your LLM is running through delta-mem-mlx. This is an experimental "
     "MLX-native delta-memory adapter that keeps per-session neural state keyed "
-    "by X-OpenClaw-Session-Key. It may improve continuity and recall across "
+    "by X-Delta-Mem-Session-Key. It may improve continuity and recall across "
     "turns, but recall can be incomplete or wrong; prefer explicit recent "
     "context when accuracy matters."
 )
@@ -60,6 +63,7 @@ def create_app(runtime: DeltaRuntime | None = None) -> FastAPI:
         request: ChatCompletionRequest,
         response: Response,
         state_key: Annotated[str, Depends(require_state_key)],
+        attention_state_header: Annotated[str | None, Header(alias=ATTENTION_STATE_HEADER)] = None,
     ) -> JsonDict:
         if request.model != runtime.model_id:
             raise HTTPException(status_code=404, detail=f"unknown model: {request.model}")
@@ -69,6 +73,15 @@ def create_app(runtime: DeltaRuntime | None = None) -> FastAPI:
             ChatMessage(role=message.role, content=coerce_message_content(message.content))
             for message in request.messages
         ]
+        attention_state, attention_state_source = resolve_attention_state(request, attention_state_header)
+        preload_attention_state(
+            runtime=runtime,
+            state=state,
+            attention_state=attention_state,
+            temperature=request.temperature,
+        )
+        response.headers[ATTENTION_STATE_COUNT_HEADER] = str(len(attention_state))
+        response.headers[ATTENTION_STATE_SOURCE_HEADER] = attention_state_source
         messages = prepend_session_preamble(messages)
         result = runtime.generate(
             messages=messages,
@@ -88,6 +101,8 @@ def create_app(runtime: DeltaRuntime | None = None) -> FastAPI:
                 model=runtime.model_id,
                 content=result.content,
                 state_key_hash=metadata.state_key_hash,
+                attention_state_count=len(attention_state),
+                attention_state_source=attention_state_source,
             )
 
         return {
@@ -136,6 +151,8 @@ def stream_response(
     model: str,
     content: str,
     state_key_hash: str,
+    attention_state_count: int = 0,
+    attention_state_source: str = "none",
 ) -> StreamingResponse:
     def events():
         first = {
@@ -188,6 +205,8 @@ def stream_response(
         media_type="text/event-stream",
         headers={
             STATE_HASH_HEADER: state_key_hash,
+            ATTENTION_STATE_COUNT_HEADER: str(attention_state_count),
+            ATTENTION_STATE_SOURCE_HEADER: attention_state_source,
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
         },
@@ -195,14 +214,99 @@ def stream_response(
 
 
 def require_state_key(
-    x_openclaw_session_key: Annotated[str | None, Header()] = None,
+    x_delta_mem_session_key: Annotated[str | None, Header()] = None,
 ) -> str:
-    if not x_openclaw_session_key or not x_openclaw_session_key.strip():
+    state_key = x_delta_mem_session_key
+    if not state_key or not state_key.strip():
         raise HTTPException(
             status_code=400,
             detail=f"{SESSION_HEADER} header is required for state isolation",
         )
-    return x_openclaw_session_key.strip()
+    return state_key.strip()
+
+
+def extract_attention_state(
+    request: ChatCompletionRequest,
+    attention_state_header: str | None,
+) -> list[str]:
+    candidates = [
+        request.attention_state,
+        request.attentionState,
+        request.delta_attention_state,
+        attention_state_header,
+    ]
+    snippets: list[str] = []
+    for candidate in candidates:
+        snippets.extend(coerce_attention_state(candidate))
+    return [snippet for snippet in snippets if snippet]
+
+
+def resolve_attention_state(
+    request: ChatCompletionRequest,
+    attention_state_header: str | None,
+) -> tuple[list[str], str]:
+    explicit = extract_attention_state(request, attention_state_header)
+    if explicit:
+        return explicit, "request"
+    return [], "none"
+
+
+def coerce_attention_state(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return []
+        if stripped.startswith("[") or stripped.startswith("{"):
+            try:
+                return coerce_attention_state(json.loads(stripped))
+            except json.JSONDecodeError:
+                return [stripped]
+        return [stripped]
+    if isinstance(value, list):
+        snippets: list[str] = []
+        for item in value:
+            snippets.extend(coerce_attention_state(item))
+        return snippets
+    if isinstance(value, dict):
+        for key in ("text", "content", "snippet", "summary"):
+            item = value.get(key)
+            if isinstance(item, str) and item.strip():
+                return [item.strip()]
+        return [
+            snippet
+            for key in ("snippets", "results", "items", "documents")
+            for snippet in coerce_attention_state(value.get(key))
+        ]
+    return [str(value)]
+
+
+def preload_attention_state(
+    *,
+    runtime: DeltaRuntime,
+    state: RuntimeState,
+    attention_state: list[str],
+    temperature: float | None,
+) -> None:
+    if not attention_state:
+        return
+    content = "\n\n".join(attention_state)
+    runtime.generate(
+        messages=[
+            ChatMessage(
+                role="system",
+                content=(
+                    "Preload these retrieved memory snippets into delta-mem attention "
+                    "state for the next user turn. Do not treat this as a user request."
+                ),
+            ),
+            ChatMessage(role="user", content=content),
+        ],
+        state=state,
+        max_tokens=1,
+        temperature=temperature,
+    )
 
 
 def coerce_message_content(content: object) -> str:

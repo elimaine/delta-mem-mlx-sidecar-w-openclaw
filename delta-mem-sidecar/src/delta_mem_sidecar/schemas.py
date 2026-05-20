@@ -17,6 +17,9 @@ class ChatCompletionRequest(BaseModel):
 
     model: str
     messages: list[ChatCompletionMessage]
+    attention_state: Any | None = None
+    attentionState: Any | None = None
+    delta_attention_state: Any | None = None
     stream: bool = False
     max_tokens: int | None = Field(default=None, ge=1)
     temperature: float | None = Field(default=None, ge=0)

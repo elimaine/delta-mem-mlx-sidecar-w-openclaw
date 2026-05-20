@@ -233,7 +233,7 @@ def post_chat(
         data=body,
         headers={
             "Content-Type": "application/json",
-            "X-OpenClaw-Session-Key": session_key,
+            "X-Delta-Mem-Session-Key": session_key,
         },
         method="POST",
     )

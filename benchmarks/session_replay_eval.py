@@ -28,7 +28,7 @@ class Probe:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Replay real OpenClaw session history into the sidecar and run behavior probes."
+        description="Replay real session history into the sidecar and run behavior probes."
     )
     parser.add_argument("--history-file", type=Path, required=True)
     parser.add_argument("--base-url", default="http://127.0.0.1:8765")
@@ -73,7 +73,7 @@ def main() -> int:
         timeout=args.timeout,
     )
     result = {
-        "kind": "openclaw_session_replay_eval",
+        "kind": "session_replay_eval",
         "history_file": str(args.history_file),
         "base_url": args.base_url,
         "model": args.model,
@@ -218,7 +218,7 @@ def replay_history(
                 {
                     "role": "user",
                     "content": (
-                        "Store this real OpenClaw session-history chunk for later behavioral continuity probes. "
+                        "Store this real session-history chunk for later behavioral continuity probes. "
                         "Acknowledge briefly and do not summarize in detail.\n\n"
                         f"{chunk}"
                     ),
@@ -260,7 +260,7 @@ def run_probes(
                 {
                     "role": "user",
                     "content": (
-                        "Answer using the replayed OpenClaw session history and current behavior context. "
+                        "Answer using the replayed session history and current behavior context. "
                         "If the history does not support an answer, say so.\n"
                         f"Question: {probe.question}"
                     ),
@@ -354,11 +354,11 @@ def expected_aliases(expected: str) -> list[str]:
             "not a mandatory component",
             "can run with or without",
         ],
-        "runnable without openclaw": [
-            "run without OpenClaw",
-            "operate independently without OpenClaw",
-            "work without OpenClaw",
-            "run with or without OpenClaw",
+        "runnable without external gateway": [
+            "run without an external gateway",
+            "operate independently without an external gateway",
+            "work without an external gateway",
+            "run with or without an external gateway",
         ],
         "not a default requirement": [
             "should not be required",
@@ -489,7 +489,7 @@ def post_chat(
         data=body,
         headers={
             "Content-Type": "application/json",
-            "X-OpenClaw-Session-Key": session_key,
+            "X-Delta-Mem-Session-Key": session_key,
         },
         method="POST",
     )

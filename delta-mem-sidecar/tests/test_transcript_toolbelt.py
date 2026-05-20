@@ -7,7 +7,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from benchmarks.openclaw_transcript_toolbelt import (  # noqa: E402
+from benchmarks.transcript_toolbelt import (  # noqa: E402
     build_probes,
     build_sanitized_session,
     extract_events,
@@ -30,7 +30,7 @@ def test_extract_events_accepts_claude_style_jsonl(tmp_path: Path) -> None:
     source.write_text(
         "\n".join(
             [
-                json.dumps({"type": "user", "message": {"role": "user", "content": "Use OpenClaw gateway."}}),
+                json.dumps({"type": "user", "message": {"role": "user", "content": "Use local gateway."}}),
                 json.dumps(
                     {
                         "type": "assistant",
@@ -45,12 +45,12 @@ def test_extract_events_accepts_claude_style_jsonl(tmp_path: Path) -> None:
     events = extract_events(source, max_events=10, max_event_chars=100)
 
     assert events == [
-        {"role": "user", "content": "Use OpenClaw gateway."},
+        {"role": "user", "content": "Use local gateway."},
         {"role": "assistant", "content": "Route via MLX."},
     ]
 
 
-def test_extract_events_accepts_openclaw_message_records(tmp_path: Path) -> None:
+def test_extract_events_accepts_nested_message_records(tmp_path: Path) -> None:
     source = tmp_path / "session.jsonl"
     source.write_text(
         "\n".join(
@@ -96,9 +96,9 @@ def test_build_probes_has_eight_deterministic_items(tmp_path: Path) -> None:
     source = tmp_path / "session.jsonl"
     source.write_text("{}", encoding="utf-8")
     events = [
-        {"role": "user", "content": "OpenClaw gateway memory benchmark."},
+        {"role": "user", "content": "local gateway memory benchmark."},
         {"role": "assistant", "content": "MLX adapter session replay."},
-        {"role": "user", "content": "QMD retrieval graph context."},
+        {"role": "user", "content": "retrieval graph context."},
         {"role": "assistant", "content": "Delta memory scoring."},
     ]
 

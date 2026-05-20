@@ -510,7 +510,7 @@ def post_chat(
     return request_json(
         f"{base_url}/v1/chat/completions",
         payload=payload,
-        headers={"X-OpenClaw-Session-Key": session_key},
+        headers={"X-Delta-Mem-Session-Key": session_key},
         timeout=timeout,
     )
 

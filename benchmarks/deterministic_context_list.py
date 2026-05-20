@@ -11,7 +11,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from benchmarks.openclaw_session_replay_eval import load_history_events, load_probes
+from benchmarks.session_replay_eval import load_history_events, load_probes
 
 
 @dataclass(frozen=True)
@@ -23,7 +23,7 @@ class Candidate:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build a deterministic memory-preload list for OpenClaw replay.")
+    parser = argparse.ArgumentParser(description="Build a deterministic memory-preload list for session replay.")
     parser.add_argument("--memory-file", type=Path, action="append", required=True)
     parser.add_argument("--target-file", type=Path, required=True)
     parser.add_argument("--probes-file", type=Path)
